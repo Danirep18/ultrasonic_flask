@@ -1,75 +1,43 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="UTF-8">
     <title>Gráfica de Distancia</title>
-    <link rel="stylesheet" href="/static/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        .chart-container {
-            display: flex;
-            align-items: flex-end;
-            height: 200px;
-            border-left: 2px solid #333;
-            border-bottom: 2px solid #333;
-            padding: 10px;
-            gap: 5px;
-            overflow-x: auto;
-        }
-
-        .bar {
-            width: 20px;
-            background-color: steelblue;
-            transition: height 0.3s ease;
-            text-align: center;
-            font-size: 10px;
-            color: white;
-        }
-
-        .bar-label {
-            writing-mode: vertical-rl;
-            transform: rotate(180deg);
-            margin-top: 5px;
-        }
+        body { font-family: sans-serif; background-color: #f5f5f5; text-align: center; padding: 20px; }
+        canvas { background: white; border: 1px solid #ccc; padding: 10px; }
     </style>
 </head>
 <body>
-    <h1>Distancia en tiempo real</h1>
-    <h2 id="dist-text">Cargando...</h2>
-
-    <div class="chart-container" id="chart"></div>
+    <h2>Lecturas del sensor ultrasónico</h2>
+    <canvas id="grafica" width="600" height="300"></canvas>
 
     <script>
-        function updateChart() {
-            fetch('/distance-data')
-                .then(res => res.json())
-                .then(data => {
-                    const chart = document.getElementById('chart');
-                    chart.innerHTML = '';
+        const datos = {{ datos|tojson }};
+        const etiquetas = datos.map(d => d.hora);
+        const valores = datos.map(d => d.distancia);
 
-                    if (data.length === 0) return;
-
-                    let max = Math.max(...data.map(d => d[1]));
-
-                    data.forEach(([time, dist]) => {
-                        const bar = document.createElement('div');
-                        bar.className = 'bar';
-                        bar.style.height = (dist / max * 100) + '%';
-                        bar.title = `${dist.toFixed(1)} cm\n${time}`;
-
-                        const label = document.createElement('div');
-                        label.className = 'bar-label';
-                        label.innerText = dist.toFixed(1);
-
-                        bar.appendChild(label);
-                        chart.appendChild(bar);
-                    });
-
-                    document.getElementById('dist-text').innerText =
-                        `Última medición: ${data[data.length - 1][1].toFixed(2)} cm`;
-                });
-        }
-
-        setInterval(updateChart, 1000);
+        const ctx = document.getElementById('grafica').getContext('2d');
+        const chart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: etiquetas,
+                datasets: [{
+                    label: 'Distancia (cm)',
+                    data: valores,
+                    fill: false,
+                    borderColor: 'rgb(75, 192, 192)',
+                    tension: 0.3
+                }]
+            },
+            options: {
+                responsive: true,
+                animation: false,
+                scales: {
+                    y: { beginAtZero: true }
+                }
+            }
+        });
     </script>
 </body>
 </html>
